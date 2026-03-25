@@ -635,7 +635,7 @@ describe("generateCommand", () => {
       await generateCommand(mockLogger, options);
 
       expect(mockLogger.success).toHaveBeenCalledWith(
-        "🎉 All done! Written 6 file(s) total (2 rules + 3 MCP files + 1 commands)",
+        "🎉 All done! Written 6 file(s) total (2 rules + 3 MCP files + 1 command)",
       );
     });
 
@@ -650,7 +650,7 @@ describe("generateCommand", () => {
       await generateCommand(mockLogger, options);
 
       expect(mockLogger.success).toHaveBeenCalledWith(
-        "🎉 All done! Written 5 file(s) total (1 rules + 1 ignore files + 1 MCP files + 1 commands + 1 subagents)",
+        "🎉 All done! Written 5 file(s) total (1 rule + 1 ignore file + 1 MCP file + 1 command + 1 subagent)",
       );
     });
 

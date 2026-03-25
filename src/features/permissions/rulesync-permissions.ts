@@ -9,7 +9,7 @@ import type { ValidationResult } from "../../types/ai-file.js";
 import { type PermissionsConfig, RulesyncPermissionsFileSchema } from "../../types/permissions.js";
 import type { RulesyncFileFromFileParams, RulesyncFileParams } from "../../types/rulesync-file.js";
 import { RulesyncFile } from "../../types/rulesync-file.js";
-import { fileExists, readFileContent } from "../../utils/file.js";
+import { readFileContentOrNull } from "../../utils/file.js";
 
 export type RulesyncPermissionsParams = RulesyncFileParams;
 
@@ -59,12 +59,10 @@ export class RulesyncPermissions extends RulesyncFile {
   }: RulesyncPermissionsFromFileParams): Promise<RulesyncPermissions> {
     const paths = RulesyncPermissions.getSettablePaths();
     const filePath = join(baseDir, paths.relativeDirPath, paths.relativeFilePath);
-
-    if (!(await fileExists(filePath))) {
+    const fileContent = await readFileContentOrNull(filePath);
+    if (fileContent === null) {
       throw new Error(`No ${RULESYNC_PERMISSIONS_RELATIVE_FILE_PATH} found.`);
     }
-
-    const fileContent = await readFileContent(filePath);
     return new RulesyncPermissions({
       baseDir,
       relativeDirPath: paths.relativeDirPath,

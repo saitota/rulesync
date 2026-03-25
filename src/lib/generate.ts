@@ -8,6 +8,7 @@ import { CommandsProcessor } from "../features/commands/commands-processor.js";
 import { HooksProcessor } from "../features/hooks/hooks-processor.js";
 import { IgnoreProcessor } from "../features/ignore/ignore-processor.js";
 import { McpProcessor } from "../features/mcp/mcp-processor.js";
+import { PermissionsProcessor } from "../features/permissions/permissions-processor.js";
 import { RulesProcessor } from "../features/rules/rules-processor.js";
 import { RulesyncSkill } from "../features/skills/rulesync-skill.js";
 import { SkillsProcessor } from "../features/skills/skills-processor.js";
@@ -17,6 +18,7 @@ import { AiFile } from "../types/ai-file.js";
 import { DirFeatureProcessor } from "../types/dir-feature-processor.js";
 import { FeatureProcessor } from "../types/feature-processor.js";
 import type { Feature } from "../types/features.js";
+import type { RulesyncFile } from "../types/rulesync-file.js";
 import type { ToolTarget } from "../types/tool-targets.js";
 import { formatError } from "../utils/error.js";
 import { fileExists } from "../utils/file.js";
@@ -38,6 +40,8 @@ export type GenerateResult = {
   skillsPaths: string[];
   hooksCount: number;
   hooksPaths: string[];
+  permissionsCount: number;
+  permissionsPaths: string[];
   skills: RulesyncSkill[];
   hasDiff: boolean;
 };
@@ -162,6 +166,7 @@ export async function generate(params: {
   const subagentsResult = await generateSubagentsCore({ config, logger });
   const skillsResult = await generateSkillsCore({ config, logger });
   const hooksResult = await generateHooksCore({ config, logger });
+  const permissionsResult = await generatePermissionsCore({ config, logger });
   const rulesResult = await generateRulesCore({ config, logger, skills: skillsResult.skills });
 
   const hasDiff =
@@ -171,6 +176,7 @@ export async function generate(params: {
     subagentsResult.hasDiff ||
     skillsResult.hasDiff ||
     hooksResult.hasDiff ||
+    permissionsResult.hasDiff ||
     rulesResult.hasDiff;
 
   return {
@@ -188,6 +194,8 @@ export async function generate(params: {
     skillsPaths: skillsResult.paths,
     hooksCount: hooksResult.count,
     hooksPaths: hooksResult.paths,
+    permissionsCount: permissionsResult.count,
+    permissionsPaths: permissionsResult.paths,
     skills: skillsResult.skills,
     hasDiff,
   };
@@ -235,6 +243,73 @@ async function generateRulesCore(params: {
         processor,
         toolFiles,
       });
+
+      totalCount += result.count;
+      allPaths.push(...result.paths);
+      if (result.hasDiff) hasDiff = true;
+    }
+  }
+
+  return { count: totalCount, paths: allPaths, hasDiff };
+}
+
+async function generatePermissionsCore(params: {
+  config: Config;
+  logger: Logger;
+}): Promise<FeatureGenerateResult> {
+  const { config, logger } = params;
+
+  let totalCount = 0;
+  const allPaths: string[] = [];
+  let hasDiff = false;
+
+  const supportedPermissionsTargets = PermissionsProcessor.getToolTargets({
+    global: config.getGlobal(),
+  });
+  const toolTargets = intersection(config.getTargets(), supportedPermissionsTargets);
+  warnUnsupportedTargets({
+    config,
+    supportedTargets: supportedPermissionsTargets,
+    featureName: "permissions",
+    logger,
+  });
+
+  for (const baseDir of config.getBaseDirs()) {
+    let rulesyncFilesLoaded = false;
+    let sharedRulesyncFiles: RulesyncFile[] = [];
+
+    for (const toolTarget of toolTargets) {
+      if (!config.getFeatures(toolTarget).includes("permissions")) {
+        continue;
+      }
+
+      const processor = new PermissionsProcessor({
+        baseDir,
+        toolTarget,
+        global: config.getGlobal(),
+        dryRun: config.isPreviewMode(),
+        logger,
+      });
+
+      if (!rulesyncFilesLoaded) {
+        sharedRulesyncFiles = await processor.loadRulesyncFiles();
+        rulesyncFilesLoaded = true;
+      }
+      let result;
+
+      if (sharedRulesyncFiles.length > 0) {
+        const toolFiles = await processor.convertRulesyncFilesToToolFiles(sharedRulesyncFiles);
+        result = await processFeatureGeneration({
+          config,
+          processor,
+          toolFiles,
+        });
+      } else {
+        result = await processEmptyFeatureGeneration({
+          config,
+          processor,
+        });
+      }
 
       totalCount += result.count;
       allPaths.push(...result.paths);

@@ -2,7 +2,11 @@ import { ConfigResolver, ConfigResolverResolveParams } from "../../config/config
 import { importFromTool } from "../../lib/import.js";
 import { CLIError, ErrorCodes } from "../../types/json-output.js";
 import type { Logger } from "../../utils/logger.js";
-import { calculateTotalCount } from "../../utils/result.js";
+import {
+  buildFeatureSummaryParts,
+  calculateTotalCount,
+  FEATURE_RESULT_DESCRIPTORS,
+} from "../../utils/result.js";
 
 export type ImportOptions = Omit<ConfigResolverResolveParams, "delete" | "baseDirs">;
 
@@ -35,26 +39,20 @@ export async function importCommand(logger: Logger, options: ImportOptions): Pro
   // Capture JSON data if in JSON mode
   if (logger.jsonMode) {
     logger.captureData("tool", tool);
-    logger.captureData("features", {
-      rules: { count: result.rulesCount },
-      ignore: { count: result.ignoreCount },
-      mcp: { count: result.mcpCount },
-      commands: { count: result.commandsCount },
-      subagents: { count: result.subagentsCount },
-      skills: { count: result.skillsCount },
-      hooks: { count: result.hooksCount },
-    });
+    const featureResults = FEATURE_RESULT_DESCRIPTORS.map((descriptor) => ({
+      feature: descriptor.feature,
+      count: result[descriptor.countKey],
+    }));
+    logger.captureData(
+      "features",
+      Object.fromEntries(
+        featureResults.map((featureResult) => [featureResult.feature, { count: featureResult.count }]),
+      ),
+    );
     logger.captureData("totalFiles", totalImported);
   }
 
-  const parts = [];
-  if (result.rulesCount > 0) parts.push(`${result.rulesCount} rules`);
-  if (result.ignoreCount > 0) parts.push(`${result.ignoreCount} ignore files`);
-  if (result.mcpCount > 0) parts.push(`${result.mcpCount} MCP files`);
-  if (result.commandsCount > 0) parts.push(`${result.commandsCount} commands`);
-  if (result.subagentsCount > 0) parts.push(`${result.subagentsCount} subagents`);
-  if (result.skillsCount > 0) parts.push(`${result.skillsCount} skills`);
-  if (result.hooksCount > 0) parts.push(`${result.hooksCount} hooks`);
+  const parts = buildFeatureSummaryParts(result);
 
   logger.success(`Imported ${totalImported} file(s) total (${parts.join(" + ")})`);
 }

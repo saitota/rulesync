@@ -2,7 +2,11 @@ import { ConfigResolver, type ConfigResolverResolveParams } from "../../config/c
 import { checkRulesyncDirExists, generate } from "../../lib/generate.js";
 import { CLIError, ErrorCodes } from "../../types/json-output.js";
 import type { Logger } from "../../utils/logger.js";
-import { calculateTotalCount } from "../../utils/result.js";
+import {
+  buildFeatureSummaryParts,
+  calculateTotalCount,
+  FEATURE_RESULT_DESCRIPTORS,
+} from "../../utils/result.js";
 
 export type GenerateOptions = ConfigResolverResolveParams;
 
@@ -71,6 +75,9 @@ export async function generateCommand(logger: Logger, options: GenerateOptions):
   if (features.includes("hooks")) {
     logger.debug("Generating hooks...");
   }
+  if (features.includes("permissions")) {
+    logger.debug("Generating permissions files...");
+  }
   if (features.includes("rules")) {
     logger.debug("Generating rule files...");
   }
@@ -79,33 +86,18 @@ export async function generateCommand(logger: Logger, options: GenerateOptions):
 
   const totalGenerated = calculateTotalCount(result);
 
-  // Log feature results and capture data for JSON mode
-  const featureResults = {
-    ignore: { count: result.ignoreCount, paths: result.ignorePaths },
-    mcp: { count: result.mcpCount, paths: result.mcpPaths },
-    commands: { count: result.commandsCount, paths: result.commandsPaths },
-    subagents: { count: result.subagentsCount, paths: result.subagentsPaths },
-    skills: { count: result.skillsCount, paths: result.skillsPaths },
-    hooks: { count: result.hooksCount, paths: result.hooksPaths },
-    rules: { count: result.rulesCount, paths: result.rulesPaths },
-  };
+  const featureResults = FEATURE_RESULT_DESCRIPTORS.map((descriptor) => ({
+    feature: descriptor.feature,
+    count: result[descriptor.countKey],
+    paths: result[`${descriptor.feature}Paths` as keyof typeof result] as string[],
+    label: descriptor.label,
+  }));
 
-  // Map feature keys to human-readable labels with pluralization
-  const featureLabels: Record<string, (count: number) => string> = {
-    rules: (count) => `${count === 1 ? "rule" : "rules"}`,
-    ignore: (count) => `${count === 1 ? "ignore file" : "ignore files"}`,
-    mcp: (count) => `${count === 1 ? "MCP file" : "MCP files"}`,
-    commands: (count) => `${count === 1 ? "command" : "commands"}`,
-    subagents: (count) => `${count === 1 ? "subagent" : "subagents"}`,
-    skills: (count) => `${count === 1 ? "skill" : "skills"}`,
-    hooks: (count) => `${count === 1 ? "hooks file" : "hooks files"}`,
-  };
-
-  for (const [feature, data] of Object.entries(featureResults)) {
+  for (const featureResult of featureResults) {
     logFeatureResult(logger, {
-      count: data.count,
-      paths: data.paths,
-      featureName: featureLabels[feature]?.(data.count) ?? feature,
+      count: featureResult.count,
+      paths: featureResult.paths,
+      featureName: featureResult.label(featureResult.count),
       isPreview,
       modePrefix,
     });
@@ -113,7 +105,15 @@ export async function generateCommand(logger: Logger, options: GenerateOptions):
 
   // Capture JSON data if in JSON mode
   if (logger.jsonMode) {
-    logger.captureData("features", featureResults);
+    logger.captureData(
+      "features",
+      Object.fromEntries(
+        featureResults.map((featureResult) => [
+          featureResult.feature,
+          { count: featureResult.count, paths: featureResult.paths },
+        ]),
+      ),
+    );
     logger.captureData("totalFiles", totalGenerated);
     logger.captureData("hasDiff", result.hasDiff);
     logger.captureData("skills", result.skills ?? []);
@@ -125,14 +125,7 @@ export async function generateCommand(logger: Logger, options: GenerateOptions):
     return;
   }
 
-  const parts = [];
-  if (result.rulesCount > 0) parts.push(`${result.rulesCount} rules`);
-  if (result.ignoreCount > 0) parts.push(`${result.ignoreCount} ignore files`);
-  if (result.mcpCount > 0) parts.push(`${result.mcpCount} MCP files`);
-  if (result.commandsCount > 0) parts.push(`${result.commandsCount} commands`);
-  if (result.subagentsCount > 0) parts.push(`${result.subagentsCount} subagents`);
-  if (result.skillsCount > 0) parts.push(`${result.skillsCount} skills`);
-  if (result.hooksCount > 0) parts.push(`${result.hooksCount} hooks`);
+  const parts = buildFeatureSummaryParts(result);
 
   if (isPreview) {
     logger.info(`${modePrefix} Would write ${totalGenerated} file(s) total (${parts.join(" + ")})`);

@@ -37,6 +37,31 @@ export const rulesyncCmd = process.env.RULESYNC_CMD
   : tsxPath;
 export const rulesyncArgs = process.env.RULESYNC_CMD ? [] : [cliPath];
 
+async function runRulesyncCommand({
+  command,
+  target,
+  features,
+  global = false,
+  env,
+}: {
+  command: "generate" | "import";
+  target: string;
+  features: string;
+  global?: boolean;
+  env?: Record<string, string>;
+}): Promise<{ stdout: string; stderr: string }> {
+  const args = [
+    ...rulesyncArgs,
+    command,
+    "--targets",
+    target,
+    "--features",
+    features,
+    ...(global ? ["--global"] : []),
+  ];
+  return execFileAsync(rulesyncCmd, args, env ? { env: { ...process.env, ...env } } : {});
+}
+
 /**
  * Runs the `rulesync generate` command with the given target and feature.
  */
@@ -51,16 +76,7 @@ export async function runGenerate({
   global?: boolean;
   env?: Record<string, string>;
 }): Promise<{ stdout: string; stderr: string }> {
-  const args = [
-    ...rulesyncArgs,
-    "generate",
-    "--targets",
-    target,
-    "--features",
-    features,
-    ...(global ? ["--global"] : []),
-  ];
-  return execFileAsync(rulesyncCmd, args, env ? { env: { ...process.env, ...env } } : {});
+  return runRulesyncCommand({ command: "generate", target, features, global, env });
 }
 
 /**
@@ -69,12 +85,15 @@ export async function runGenerate({
 export async function runImport({
   target,
   features,
+  global = false,
+  env,
 }: {
   target: string;
   features: string;
+  global?: boolean;
+  env?: Record<string, string>;
 }): Promise<{ stdout: string; stderr: string }> {
-  const args = [...rulesyncArgs, "import", "--targets", target, "--features", features];
-  return execFileAsync(rulesyncCmd, args);
+  return runRulesyncCommand({ command: "import", target, features, global, env });
 }
 
 /**

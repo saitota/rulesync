@@ -25,11 +25,13 @@ rulesync import --targets claudecode    # From CLAUDE.md
 rulesync import --targets cursor        # From .cursorrules
 rulesync import --targets copilot       # From .github/copilot-instructions.md
 rulesync import --targets claudecode --features rules,mcp,commands,subagents
+rulesync import --global --targets claudecode --features permissions
 
 # And more tool supports
 
 # Generate unified configurations with all features
 rulesync generate --targets "*" --features "*"
+rulesync generate --global --targets claudecode --features permissions
 ```
 
 ## Quick Commands

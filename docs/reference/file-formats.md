@@ -88,6 +88,42 @@ Example:
 }
 ```
 
+## `.rulesync/permissions.json`
+
+Permissions store canonical per-tool rules as `tool -> pattern -> action` mappings.
+
+Rulesync currently supports round-trip generation/import for Claude Code global permissions in `~/.claude/settings.json`.
+
+Example:
+
+```json
+{
+  "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/permissions-schema.json",
+  "permission": {
+    "bash": {
+      "git status *": "allow",
+      "rm *": "ask"
+    },
+    "read": {
+      ".env": "deny"
+    },
+    "webfetch": {
+      "*": "allow"
+    },
+    "mcp__serena__find_file": {
+      "*": "allow"
+    }
+  }
+}
+```
+
+Notes:
+
+- `allow`, `ask`, and `deny` are the supported action values.
+- `*` means a bare tool permission with no argument pattern, such as Claude Code's `WebFetch`.
+- Known Claude tool names are normalized to lowercase canonical keys such as `bash`, `read`, `write`, `edit`, `webfetch`, `websearch`, and `skill`.
+- Tool-specific identifiers such as `mcp__server__tool` are preserved as-is so Claude permissions can round-trip without losing fidelity.
+
 ## `rulesync/commands/*.md`
 
 Example:
