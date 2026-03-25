@@ -33,8 +33,8 @@ describe("ClaudecodePermissions", () => {
       });
     });
 
-    it("should return Claude local settings path for project mode", () => {
-      expect(ClaudecodePermissions.getSettablePaths()).toEqual({
+    it("should return Claude local settings path for non-global path resolution", () => {
+      expect(ClaudecodePermissions.getSettablePaths({ global: false })).toEqual({
         relativeDirPath: ".claude",
         relativeFilePath: "settings.local.json",
       });

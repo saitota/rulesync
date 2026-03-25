@@ -8,6 +8,7 @@ rulesync init
 
 # Import existing configurations (to .rulesync/rules/ by default)
 rulesync import --targets claudecode --features rules,ignore,mcp,commands,subagents,skills
+rulesync import --global --targets claudecode --features permissions
 
 # Fetch configurations from a Git repository
 rulesync fetch owner/repo
@@ -20,6 +21,7 @@ rulesync generate --targets "*" --features "*"
 # Generate specific features for specific tools
 rulesync generate --targets copilot,cursor,cline --features rules,mcp
 rulesync generate --targets claudecode --features rules,subagents
+rulesync generate --global --targets claudecode --features permissions
 
 # Generate only rules (no MCP, ignore files, commands, or subagents)
 rulesync generate --targets "*" --features rules
@@ -73,7 +75,7 @@ The `gitignore` command adds generated AI tool configuration files to `.gitignor
 | Option                      | Description                                                                                          | Default   |
 | --------------------------- | ---------------------------------------------------------------------------------------------------- | --------- |
 | `--targets, -t <tools>`     | Comma-separated list of tools to include (e.g., `claudecode,copilot` or `*` for all)                 | `*` (all) |
-| `--features, -f <features>` | Comma-separated list of features to include (rules, commands, subagents, skills, ignore, mcp, hooks) | `*` (all) |
+| `--features, -f <features>` | Comma-separated list of features to include (rules, commands, subagents, skills, ignore, mcp, hooks, permissions) | `*` (all) |
 
 ### Examples
 

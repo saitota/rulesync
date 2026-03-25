@@ -133,7 +133,7 @@ rulesync fetch owner/repo@ref:path   # Both ref and path
 | Option                  | Description                                                                                | Default                          |
 | ----------------------- | ------------------------------------------------------------------------------------------ | -------------------------------- |
 | `--target, -t <target>` | Target format to interpret files as (e.g., 'rulesync', 'claudecode')                       | `rulesync`                       |
-| `--features <features>` | Comma-separated features to fetch (rules, commands, subagents, skills, ignore, mcp, hooks, permissions) | `*` (all)                        |
+| `--features <features>` | Comma-separated features to fetch (rules, commands, subagents, skills, ignore, mcp, hooks) | `*` (all)                        |
 | `--output <dir>`        | Output directory relative to project root                                                  | `.rulesync`                      |
 | `--conflict <strategy>` | Conflict resolution: `overwrite` or `skip`                                                 | `overwrite`                      |
 | `--ref <ref>`           | Git ref (branch/tag/commit) to fetch from                                                  | Default branch                   |
