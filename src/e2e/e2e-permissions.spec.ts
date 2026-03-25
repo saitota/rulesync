@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { RULESYNC_PERMISSIONS_RELATIVE_FILE_PATH } from "../constants/rulesync-paths.js";
-import { readFileContent, writeFileContent } from "../utils/file.js";
+import { fileExists, readFileContent, writeFileContent } from "../utils/file.js";
 import { runGenerate, runImport, useGlobalTestDirectories } from "./e2e-helper.js";
 
 describe("E2E: permissions (global mode)", () => {
@@ -101,5 +101,20 @@ describe("E2E: permissions (global mode)", () => {
     expect(parsed.permissions.allow).toEqual(["Bash(git status *)"]);
     expect(parsed.permissions.ask).toEqual(["WebFetch"]);
     expect(parsed.permissions.deny).toEqual([]);
+  });
+  it("should skip import when Claude Code global settings do not exist", async () => {
+    const projectDir = getProjectDir();
+    const homeDir = getHomeDir();
+
+    await runImport({
+      target: "claudecode",
+      features: "permissions",
+      global: true,
+      env: { HOME_DIR: homeDir },
+    });
+
+    await expect(fileExists(join(projectDir, RULESYNC_PERMISSIONS_RELATIVE_FILE_PATH))).resolves.toBe(
+      false,
+    );
   });
 });

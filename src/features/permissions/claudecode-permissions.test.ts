@@ -226,13 +226,13 @@ describe("ClaudecodePermissions", () => {
   });
 
   describe("fromFile", () => {
-    it("should initialize empty permissions when settings file does not exist", async () => {
-      const instance = await ClaudecodePermissions.fromFile({
-        baseDir: testDir,
-        global: true,
-      });
-
-      expect(instance.getCanonicalConfig()).toEqual({ permission: {} });
+    it("should throw when settings file does not exist", async () => {
+      await expect(
+        ClaudecodePermissions.fromFile({
+          baseDir: testDir,
+          global: true,
+        }),
+      ).rejects.toThrow("no such file or directory");
     });
   });
 });

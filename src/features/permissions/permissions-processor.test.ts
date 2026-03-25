@@ -181,6 +181,20 @@ describe("PermissionsProcessor", () => {
       expect(files[0]).toBeInstanceOf(ClaudecodePermissions);
     });
 
+    it("should return empty array when Claude settings file does not exist", async () => {
+      const processor = new PermissionsProcessor({
+        logger,
+        baseDir: testDir,
+        toolTarget: "claudecode",
+        global: true,
+      });
+
+      const files = await processor.loadToolFiles();
+      expect(files).toHaveLength(0);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to load permissions files for tool target: claudecode"),
+      );
+    });
     it("should return empty array for deletion because Claude settings are not deletable", async () => {
       const processor = new PermissionsProcessor({
         logger,

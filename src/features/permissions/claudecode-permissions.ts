@@ -222,8 +222,10 @@ export class ClaudecodePermissions extends ToolPermissions {
   }: ToolPermissionsFromFileParams): Promise<ClaudecodePermissions> {
     const paths = this.getSettablePaths({ global });
     const filePath = join(baseDir, paths.relativeDirPath, paths.relativeFilePath);
-    const fileContent =
-      (await readFileContentOrNull(filePath)) ?? JSON.stringify({ permissions: {} }, null, 2);
+    const fileContent = await readFileContentOrNull(filePath);
+    if (fileContent === null) {
+      throw new Error(`no such file or directory: ${filePath}`);
+    }
 
     return new ClaudecodePermissions({
       baseDir,
