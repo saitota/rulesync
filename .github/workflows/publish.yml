@@ -30,7 +30,13 @@ jobs:
         run: pnpm install --ignore-scripts
 
       - name: Publish to npm
-        run: pnpm publish
+        # --provenance generates a signed npm provenance attestation using the
+        # OIDC token granted by `id-token: write`. `access: public` already lives
+        # in package.json's publishConfig, so it is not repeated here.
+        # TODO(owner): Configure npm Trusted Publisher (OIDC) for this package at
+        # npmjs.com (Settings > Trusted Publisher). Once enabled, the long-lived
+        # npm token can be removed entirely in favor of short-lived OIDC tokens.
+        run: pnpm publish --provenance
 
       - name: Publish target draft release
         env:
